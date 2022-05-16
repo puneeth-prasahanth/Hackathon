@@ -12,6 +12,49 @@ connection = psycopg2.connect(user = "postgres",
 
 app = Flask(__name__)
 
+
+@app.route("/user", methods=['POST', 'GET'])
+def phonetic_name_prononce():
+     """
+
+     :return:
+     """
+     print(request.method)
+     if request.method == 'POST':
+          emp_id=json.dumps(request.form['emp_id'])
+          emp_id=emp_id[1:-1]
+          emp_id="'"+emp_id+"'"
+          select_statment=f'select * from emp where emp_id={emp_id}'
+          print(f'select_statment:{select_statment}')
+          try:
+              c = connection.cursor()
+              # c.autocommit = True
+              c.execute(select_statment)
+          except Exception as e:
+              print(f'Failed becouse of {e}')
+          finally:
+              data=c.fetchall()
+              print(data)
+              first_name=data[0][0]
+              last_name=data[0][1]
+              emp_id=data[0][2]
+              audio=data[0][3]
+              with open("sample.txt", "wb") as f:
+                  f.write(audio)
+              with open("sample.txt", "r") as f:
+                  file_name = f.readline()
+              print(file_name)
+              mixer.init()
+              mixer.music.load(file_name)
+              mixer.music.play()
+
+          return render_template('user_data.html', first_name=first_name,last_name=last_name,emp_id=emp_id)
+     else:
+         return render_template('user.html')
+
+
+
+
 @app.route("/admin", methods=['POST', 'GET'])
 def phonetic_name_update():
      """
@@ -90,6 +133,7 @@ def t2s(*args):
         try:
             cursor = connection.cursor()
             cursor.execute(emp_update_statment)
+            connection.commit()
             #  connection.commit()
         except Exception as e:
             print(f'Failed becouse of {e}')
